@@ -1,0 +1,16 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "chatwithpdf-api"
+version = "1.0.0"
+description = "FastAPI backend for Chat With PDF"
+requires-python = ">=3.9"
+dependencies = [
+    "fastapi>=0.109.0",
+    "uvicorn[standard]>=0.27.0",
+    "transformers>=4.37.0",
+    "torch>=2.1.2",
+    "pydantic>=2.5.3",
+]
