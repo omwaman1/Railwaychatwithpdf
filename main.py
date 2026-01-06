@@ -6,9 +6,8 @@ import os
 app = Flask(__name__)
 CORS(app)
 
-# Use HuggingFace Inference API (free, no local model loading)
-# This avoids memory issues on Railway free tier
-HF_API_URL = "https://router.huggingface.co/hf-inference/models/google/flan-t5-small"
+# Use HuggingFace Inference API
+HF_API_URL = "https://router.huggingface.co/hf-inference/v1/models/google/flan-t5-small"
 HF_TOKEN = os.environ.get("HF_TOKEN", "")  # Optional: set in Railway env vars for faster responses
 
 
