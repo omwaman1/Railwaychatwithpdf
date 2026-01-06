@@ -6,14 +6,14 @@ import os
 app = Flask(__name__)
 CORS(app)
 
-# Use HuggingFace Inference API
-HF_API_URL = "https://router.huggingface.co/hf-inference/v1/models/google/flan-t5-small"
-HF_TOKEN = os.environ.get("HF_TOKEN", "")  # Optional: set in Railway env vars for faster responses
+# HuggingFace Inference API - OpenAI compatible format
+HF_API_URL = "https://router.huggingface.co/v1/chat/completions"
+HF_TOKEN = os.environ.get("HF_TOKEN", "")
 
 
 @app.route("/")
 def root():
-    return jsonify({"status": "ok", "model": "google/flan-t5-small", "type": "huggingface-inference-api"})
+    return jsonify({"status": "ok", "model": "meta-llama/Llama-3.2-1B-Instruct"})
 
 
 @app.route("/health")
@@ -25,40 +25,47 @@ def health():
 def chat():
     try:
         data = request.get_json()
-        context = data.get("context", "")[:3000]  # Limit context
+        context = data.get("context", "")[:3000]
         question = data.get("question", "")
         
         if not question:
             return jsonify({"success": False, "error": "Question required"}), 400
         
-        prompt = f"""Answer the question based on the context.
-
-Context: {context}
-
-Question: {question}
-
-Answer:"""
-        
-        headers = {}
+        headers = {
+            "Content-Type": "application/json"
+        }
         if HF_TOKEN:
             headers["Authorization"] = f"Bearer {HF_TOKEN}"
+        
+        # OpenAI-compatible request format
+        payload = {
+            "model": "meta-llama/Llama-3.2-1B-Instruct",
+            "messages": [
+                {
+                    "role": "system",
+                    "content": "You are a helpful assistant that answers questions based on the provided document. Be concise."
+                },
+                {
+                    "role": "user",
+                    "content": f"Document:\n{context}\n\nQuestion: {question}"
+                }
+            ],
+            "max_tokens": 200
+        }
         
         response = requests.post(
             HF_API_URL,
             headers=headers,
-            json={"inputs": prompt, "parameters": {"max_new_tokens": 200}},
+            json=payload,
             timeout=60
         )
         
         if response.status_code == 200:
             result = response.json()
-            if isinstance(result, list) and len(result) > 0:
-                answer = result[0].get("generated_text", "No answer generated")
-            else:
-                answer = str(result)
+            answer = result.get("choices", [{}])[0].get("message", {}).get("content", "No answer")
             return jsonify({"success": True, "answer": answer})
         else:
-            return jsonify({"success": False, "error": f"HF API error: {response.text}"}), 500
+            return jsonify({"success": False, "error": f"API error: {response.text}"}), 500
         
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
