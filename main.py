@@ -16,14 +16,13 @@ app.add_middleware(
 )
 
 # Load lightweight model - Flan-T5 Small (300MB, fast, free)
-# Good for question answering tasks
 print("Loading model...")
 model_name = "google/flan-t5-small"
 tokenizer = AutoTokenizer.from_pretrained(model_name)
 model = AutoModelForSeq2SeqLM.from_pretrained(model_name)
 
-# Use CPU (Railway free tier)
-device = "cuda" if torch.cuda.is_available() else "cpu"
+# Use CPU
+device = "cpu"
 model = model.to(device)
 print(f"Model loaded on {device}")
 
@@ -37,6 +36,15 @@ class ChatResponse(BaseModel):
     success: bool
     answer: str = None
     error: str = None
+
+    class Config:
+        # Pydantic v1 style
+        schema_extra = {
+            "example": {
+                "success": True,
+                "answer": "The answer..."
+            }
+        }
 
 
 @app.get("/")
